@@ -13,6 +13,7 @@ to log anything use the logging module.
 # Let's start by importing the Halite Starter Kit so we can interface with the Halite engine
 import hlt
 import logging
+from hlt.entity import Planet, Ship
 
 
 logging.basicConfig(filename='log', level=logging.INFO)
@@ -21,19 +22,17 @@ logging.basicConfig(filename='log', level=logging.INFO)
 # Here we define the bot's name as Settler and initialize the game, including communication with the Halite engine.
 game = hlt.Game("Breed")
 
+
 def closest_planet(thing):
     entities = game_map.nearby_entities_by_distance(thing)
 
     ekeys = sorted(entities.keys())
 
-    #for ekey in ekeys:
-        #logging.info(type(entities[ekey]))
-        #logging.info(ekey)
-        #logging.info(entities[ekey])
-        #if type(entities[ekey]) == Planet and not entities[ekey].is_owned():
+    for ekey in ekeys:
+        for ent in entities[ekey]:
+            if type(ent) == Planet and not ent.is_full():
+                return ent
 
-    logging.info(type(entities[ekeys[0]]))
-    return entities[ekeys[0]][0]
 
 while True:
     # TURN START
@@ -48,18 +47,17 @@ while True:
         if ship.docking_status != ship.DockingStatus.UNDOCKED:
             # Skip this ship
             continue
-        
-        planet = closest_planet(ship)
-        logging.info(planet)
 
+        planet = closest_planet(ship)
         if ship.can_dock(planet):
             command_queue.append(ship.dock(planet))
 
         else:
             navigate_command = ship.navigate(ship.closest_point_to(planet), game_map, speed=hlt.constants.MAX_SPEED, ignore_ships=True)
+            logging.info(navigate_command)
             if navigate_command:
                 command_queue.append(navigate_command)
 
-
+    game.send_command_queue(command_queue)
     # TURN END
 # GAME END
